@@ -86,8 +86,8 @@
     <Compile Include="MainActivity.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="MediaManager.cs" />
-    <Compile Include="MediaPickerActivity.cs" />
+    <Compile Include="ImageCapture.cs" />
+    <Compile Include="ImageCaptureActivity.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\AboutResources.txt" />
