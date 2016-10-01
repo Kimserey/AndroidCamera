@@ -117,7 +117,7 @@ namespace Camera.Droid
 			return _completionSource.Task;
 		}
 
-		private Intent CreateMediaIntent(int id, string type, string action, StoreCameraMediaOptions options, bool tasked = false)
+		private Intent CreateMediaIntent(int id, string type, string action, StoreCameraMediaOptions options, bool tasked = true)
 		{
 			var pickerIntent = new Intent(Android.App.Application.Context, typeof(MediaPickerActivity));
 			pickerIntent.PutExtra(MediaPickerActivity.ExtraId, id);
