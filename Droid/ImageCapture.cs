@@ -18,7 +18,7 @@ namespace Camera.Droid
 	public class ImageCapture : IImageCapture
 	{
 		// Id used to ensure unicity of the request
-		// and also used in activity to match OnCreate and OnActivityResult
+		// and also used in activity to match OnCreate and OnActivityResult.
 		int _id;
 		int NextId()
 		{
