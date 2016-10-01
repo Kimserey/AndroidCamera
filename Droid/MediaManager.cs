@@ -117,21 +117,14 @@ namespace Camera.Droid
 			return _completionSource.Task;
 		}
 
-		private Intent CreateMediaIntent(int id, string type, string action, StoreCameraMediaOptions options, bool tasked = true)
+		private Intent CreateMediaIntent(int id, string type, string action, StoreCameraMediaOptions options)
 		{
 			var pickerIntent = new Intent(Android.App.Application.Context, typeof(MediaPickerActivity));
 			pickerIntent.PutExtra(MediaPickerActivity.ExtraId, id);
 			pickerIntent.PutExtra(MediaPickerActivity.ExtraType, type);
-			pickerIntent.PutExtra(MediaPickerActivity.ExtraAction, action);
-			pickerIntent.PutExtra(MediaPickerActivity.ExtraTasked, tasked);
 			pickerIntent.PutExtra(MediaPickerActivity.ExtraPath, options.Directory);
-
-			if (options.DefaultCamera == CameraDevice.Front)
-				pickerIntent.PutExtra(MediaPickerActivity.ExtraFront, 1);
-
 			pickerIntent.PutExtra(MediaPickerActivity.ExtraSaveToAlbum, options.SaveToAlbum);
-
-			//pickerIntent.SetFlags(ActivityFlags.ClearTop);
+			pickerIntent.SetFlags(ActivityFlags.ClearTop);
 			pickerIntent.SetFlags(ActivityFlags.NewTask);
 			return pickerIntent;
 		}
