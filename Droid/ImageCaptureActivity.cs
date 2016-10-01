@@ -24,12 +24,13 @@ namespace Camera.Droid
 		internal static event EventHandler<ImageCaptureEventArgs> ImageCaptured;
 		internal const string ExtraId = "id";
 		internal const string ExtraPath = "path";
+		internal const string ExtraSaveToAlbum = "album_save";
 
 		const string Action = MediaStore.ActionImageCapture;
 		int _id;
 		string _title;
 		string _extraPath;
-		string _path;
+		Uri _path;
 
 		protected override void OnCreate(Bundle savedInstanceState)
 		{
@@ -42,9 +43,10 @@ namespace Camera.Droid
 			_title = "IMG_" + DateTime.Now.ToString("yyyyMMdd_HHmmssfff") + ".jpg";
 
 			// Define subfolder which will contain all the files
-			_extraPath = "Camera_test";
+			_extraPath = "camera_test";
 
 			var imageCaptureIntent = new Intent(Action);
+			imageCaptureIntent.PutExtra(ExtraSaveToAlbum, true);
 			try
 			{
 				using (Java.IO.File mediaStorageDir = new Java.IO.File(Environment.GetExternalStoragePublicDirectory(Environment.DirectoryPictures), _extraPath))
@@ -55,9 +57,9 @@ namespace Camera.Droid
 						if (!result) throw new IOException("Failed to create directory, make sure WRITE_EXTERNAL_STORAGE permission is set.");
 					}
 
-					_path = Path.Combine(mediaStorageDir.Path, _title);
-
-					File.Create(_path).Close();
+					// Path needs to be expressed as a URI to be passed to the image capture intent
+					_path = Uri.FromFile(new Java.IO.File(Path.Combine(mediaStorageDir.Path, _title)));
+					File.Create(_path.Path).Close();
 					imageCaptureIntent.PutExtra(MediaStore.ExtraOutput, _path);
 				}
 
@@ -78,13 +80,15 @@ namespace Camera.Droid
 		{
 			base.OnActivityResult(requestCode, resultCode, data);
 
-			if (requestCode == _id)
-				TriggerImageCapture(
-					this,
-					resultCode != Result.Canceled
-						? ImageCaptureEventArgs.CreateSuccess(_id, _path)
-						: ImageCaptureEventArgs.CreateaCancelled(_id)
-				);
+			if (requestCode != _id || resultCode == Result.Canceled)
+			{
+				File.Delete(_path.Path);
+				TriggerImageCapture(this, ImageCaptureEventArgs.CreateaCancelled(_id));
+			}
+			else
+			{
+				TriggerImageCapture(this, ImageCaptureEventArgs.CreateSuccess(_id, _path.Path));
+			}
 
 			Finish();
 		}
@@ -94,7 +98,6 @@ namespace Camera.Droid
 			outState.PutString(MediaStore.MediaColumns.Title, _title);
 			outState.PutInt(ExtraId, _id);
 			outState.PutString(ExtraPath, _extraPath);
-			outState.PutString(ExtraPath, _path);
 			base.OnSaveInstanceState(outState);
 		}
 
