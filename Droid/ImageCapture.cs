@@ -11,6 +11,7 @@ using Android.Hardware.Camera2;
 using System.Threading;
 using Xamarin.Forms;
 using Camera.Droid;
+using System.IO;
 
 [assembly: Dependency(typeof(ImageCapture))]
 namespace Camera.Droid
@@ -28,7 +29,7 @@ namespace Camera.Droid
 			return id;
 		}
 
-		public Task<ImageCaptureResult> Capture()
+		public async Task<ImageCaptureResult> Capture()
 		{
 			int id = NextId();
 
@@ -37,7 +38,10 @@ namespace Camera.Droid
 			pickerIntent.SetFlags(ActivityFlags.NewTask);
 			Android.App.Application.Context.StartActivity(pickerIntent);
 
-			return ImageCaptureDelegateToTask(id);
+			var result = await ImageCaptureDelegateToTask(id);
+			await FixExif(result.Path);
+
+			return result;
 		}
 
 		// Shared task completion source used to track camera instances running
@@ -75,5 +79,50 @@ namespace Camera.Droid
 
 			return _completionSource.Task;
 		}
+
+		// Fixes the orientation of the file.
+		public Task FixExif(string filePath)
+		{
+			return Task.Run(() =>
+			{
+				var orientation = 0;
+
+				using (var ei = new ExifInterface(filePath))
+				{
+					switch ((Orientation)ei.GetAttributeInt(ExifInterface.TagOrientation, (int)Orientation.Normal))
+					{
+						case Orientation.Rotate90:
+							orientation = 90; break;
+						case Orientation.Rotate180:
+							orientation = 180; break;
+						case Orientation.Rotate270:
+							orientation = 270; break;
+						default:
+							orientation = 0; break;
+					}
+				}
+
+				if (orientation != 0)
+				{
+					using (var originalImage = BitmapFactory.DecodeFile(filePath))
+					{
+						var matrix = new Matrix();
+						matrix.PostRotate(orientation);
+						using (var rotatedImage = Bitmap.CreateBitmap(originalImage, 0, 0, originalImage.Width, originalImage.Height, matrix, true))
+						{
+							using (var stream = File.Open(filePath, FileMode.Create, FileAccess.ReadWrite))
+							{
+								rotatedImage.Compress(Bitmap.CompressFormat.Jpeg, 100, stream);
+								stream.Close();
+							}
+							rotatedImage.Recycle();
+						}
+						originalImage.Recycle();
+						GC.Collect();
+					}
+				}
+			});
+		}
+
 	}
 }
